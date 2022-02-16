@@ -1,5 +1,5 @@
 import numpy as np
-from _best_split import find_best_split
+from _best_split import find_best_split_classification
 from collections import Counter
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score as acc
@@ -46,7 +46,7 @@ class DecisionTreeClassifierReal(BaseEstimator):
             if len(np.unique(feature_vector)) < 2:
                 continue
 
-            _, _, threshold, gini = find_best_split(feature_vector,
+            _, _, threshold, gini = find_best_split_classification(feature_vector,
                                                     sub_y)
 
             if gini_best is None or gini > gini_best:
