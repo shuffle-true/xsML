@@ -114,10 +114,10 @@ class DecisionTreeClassifierReal(BaseEstimator):
         return np.array(predicted)
 
 
-# dtc = DecisionTreeClassifierReal(max_depth = 10, min_samples_split = 2, min_samples_leaf = 1)
-# X = np.ndarray((1000,2), buffer=np.random.normal(loc = 0,
+# dtc = DecisionTreeClassifierReal(max_depth = 5, min_samples_split = 2, min_samples_leaf = 1)
+# X = np.ndarray((10000,2), buffer=np.random.normal(loc = 0,
 #                                           scale=5,
-#                                           size = (1000,2)))
+#                                           size = (10000,2)))
 #
 # y = np.logical_xor(X[:, 0] > 0, X[:, 1] < 0).astype(int)
 #
@@ -126,5 +126,6 @@ class DecisionTreeClassifierReal(BaseEstimator):
 #
 # dtc.fit(X_train, y_train)
 # print(f'Accuracy = {acc(y_test, dtc.predict(X_test))}')
+
 
 

@@ -106,11 +106,4 @@ def find_best_split_regressor(feature_vector, sub_y):
 
 
 
-np.random.seed(42)
 
-X = np.ndarray(shape = (10000, 2), buffer = np.random.normal(loc = 1, scale = 9, size = (10000, 2)))
-
-y = X[:, 0] + np.random.normal(loc = 2, scale = 3, size = (10000, ))
-
-# print(f'Признаки: {X[:10]}\nТаргет: {y[:10]}')
-print(find_best_split_regressor_mse(X[:, 1], y))
