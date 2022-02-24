@@ -1,4 +1,4 @@
-from ._utils import _check_param, get_numpy_array
+from ._utils import _check_param, get_numpy_array_train, get_numpy_array_test
 from sklearn.base import BaseEstimator
 from ._tree import DecisionTreeRegressorSlow, DecisionTreeRegressorFast
 
@@ -16,7 +16,7 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
         # checking input data
 
         # get numpy array from different type
-        X_train, y_train = get_numpy_array(X_train, y_train)
+        X_train, y_train = get_numpy_array_train(X_train, y_train)
 
         # y_train must have 1 dimension
         if len(y_train.shape) != 1:
@@ -35,6 +35,7 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
         return self
 
     def predict(self, X_test):
+        X_test = get_numpy_array_test(X_test)
         X_test = super(DecisionTreeRegressorSlow, self)._check_input_test(X_test)
         return super(TreeRegressorSlow, self)._predict(X_test, self.tree)
 
@@ -53,7 +54,7 @@ class TreeRegressor(BaseEstimator, DecisionTreeRegressorFast):
         # checking input data
 
         # get numpy array from different type
-        X_train, y_train = get_numpy_array(X_train, y_train)
+        X_train, y_train = get_numpy_array_train(X_train, y_train)
 
         # y_train must have 1 dimension
         if len(y_train.shape) != 1:
@@ -72,5 +73,6 @@ class TreeRegressor(BaseEstimator, DecisionTreeRegressorFast):
         return self
 
     def predict(self, X_test):
+        X_test = get_numpy_array_test(X_test)
         X_test = super(DecisionTreeRegressorFast, self)._check_input_test(X_test)
         return super(TreeRegressor, self)._predict(X_test, self.tree)
