@@ -119,9 +119,11 @@ cdef list _fit_tree_fast(np.ndarray[np.float64_t, ndim = 2] sub_X, np.ndarray[np
     cdef np.float64_t delta_r
 
     cdef np.float64_t threshold_best
+    cdef np.float64_t error
 
     value = sub_y.mean()
     best_error = ((sub_y - value) ** 2).sum()
+    error = best_error
 
     feature_split, left_value, right_value = None, None, None
 
@@ -133,8 +135,8 @@ cdef list _fit_tree_fast(np.ndarray[np.float64_t, ndim = 2] sub_X, np.ndarray[np
         # sort feature
         arg = np.argsort(feature_vector)
 
-        sm_l, sm_r = sub_y.mean(), 0
-        mean_l, mean_r = sub_y.sum(), 0
+        sm_l, sm_r = sub_y.sum(), 0
+        mean_l, mean_r = sub_y.mean(), 0
 
         # count samples in right and left child
         N = feature_vector.shape[0]
@@ -159,21 +161,21 @@ cdef list _fit_tree_fast(np.ndarray[np.float64_t, ndim = 2] sub_X, np.ndarray[np
             prev_error_l += (delta_l ** 2) * Nl
             prev_error_l -= (sub_y[ind] - mean_l) ** 2
             prev_error_l -= 2 * delta_l * (sm_l - mean_l * Nl)
-            mean1 = sm_l / Nl
+            mean_l = sm_l / Nl
 
             prev_error_r += (delta_r ** 2) * Nr
             prev_error_r += (sub_y[ind] - mean_r) ** 2
             prev_error_r -= 2 * delta_r * (sm_r - mean_r * Nr)
-            mean2 = sm_r / Nr
+            mean_r = sm_r / Nr
 
 
-            if (prev_error_l + prev_error_r < best_error) and (min(Nl, Nr) > min_samples_leaf):
+            if (prev_error_l + prev_error_r < error) and (min(Nl, Nr) > min_samples_leaf):
                 threshold_best = threshold
                 feature_split = feature
                 left_value = mean_l
                 right_value = mean_r
 
-                best_error = prev_error_l + prev_error_r
+                error = prev_error_l + prev_error_r
 
             thres += 1
 
@@ -220,7 +222,6 @@ cdef class TreeBuilder:
 #------------------------------------------------------------------
 #                      SLOW - TREE - CLASS
 #------------------------------------------------------------------
-
 
 
 cdef class DecisionTreeRegressorSlow(TreeBuilder):

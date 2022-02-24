@@ -1,21 +1,16 @@
 from tree import TreeRegressor, TreeRegressorSlow
 from sklearn.datasets import fetch_california_housing
-import time
+from sklearn.metrics import mean_squared_error as mse
 
 data = fetch_california_housing()
-X = data.data[:10000]
-y = data.target[:10000]
+X = data.data[:15000]
+y = data.target[:15000]
 
 
-model = TreeRegressor(max_depth = 10)
-start = time.time()
+model = TreeRegressor(max_depth = 3, min_samples_leaf=10)
 model.fit(X, y)
-end = time.time()
-print(f"Fast time: {end - start} сек")
+print(mse(y, model.predict(X)))
 
-model_x = TreeRegressorSlow(max_depth = 10)
-start = time.time()
-model_x.fit(X, y)
-end = time.time()
-print(f"Slow time: {end - start} сек")
+
+
 
