@@ -1,14 +1,6 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
 import warnings
 warnings.filterwarnings("ignore")
-np.random.seed(42)
-
-
-
-from sklearn.metrics import mean_squared_error as mse
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
 
 
 def compute_biase_variance(regressor, X: np.array, y, num_runs=100):
@@ -76,28 +68,6 @@ def compute_biase_variance(regressor, X: np.array, y, num_runs=100):
     # усредненное смещение и разброс и ошибку по всем объектам - искомая величина
     bias = mean_bias.mean(axis = 0)
     varience = var_varience_obj.mean(axis = 0)
-    error = (error[np.where(counts > 0)] / counts).mean()
+    error = (error[np.where(counts > 0)] / counts[np.where(counts > 0)]).mean()
 
     return bias, varience, error
-
-
-
-
-
-
-
-X = np.ndarray((100,2), buffer=np.random.normal(loc = 0,
-                                          scale=5,
-                                          size = (100,2)))
-
-y = X[:, 1] + np.random.normal(loc = 4,
-                               scale=5,
-                               size = (100,)) + X[:, 0] + np.random.normal(loc = 71,
-                                                                           scale=93,
-                                                                           size = (100,))
-
-lr = LinearRegression()
-dt = DecisionTreeRegressor(max_depth = 5000, min_samples_leaf = 100)
-rfr = RandomForestRegressor(n_estimators = 50)
-
-compute_biase_variance(rfr, X, y, num_runs = 1000)
