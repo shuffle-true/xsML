@@ -14,7 +14,20 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
 
     def fit(self, X_train, y_train):
         # checking input data
+
+        # get numpy array from different type
         X_train, y_train = get_numpy_array(X_train, y_train)
+
+        # y_train must have 1 dimension
+        if len(y_train.shape) != 1:
+            raise IndexError(f"y_train not 1 dimension. y_train dim {len(y_train.shape)} != 1. "
+                             f"Please, check input data")
+
+        # check lenght data
+        if X_train.shape[0] != len(y_train):
+            raise IndexError(f"Lenght X_train != y_train: {X_train.shape[0]} != {len(y_train)}. "
+                             f"Please, check input data.")
+
         X_train, y_train = super(DecisionTreeRegressorSlow, self)._check_input(X_train, y_train)
 
         # fit tree
