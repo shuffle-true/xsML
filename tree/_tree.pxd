@@ -101,12 +101,18 @@ cdef class TreeBuilder:
     cpdef _check_input(self, np.ndarray X, np.ndarray y):
         """Checking dtype X, y"""
         if X.dtype != np.float64 and X.dtype != np.float32 and X.dtype != np.int64 and X.dtype != np.int32:
-            raise TypeError(f"X type must be int or float. Type X now: {X.dtype}")
+            raise TypeError(f"X_train type must be int or float. Type X_train now: {X.dtype}")
 
         elif y.dtype != np.float64 and y.dtype != np.float32 and y.dtype != np.int64 and y.dtype != np.int32:
-            raise TypeError(f"Y type must be int or float. Type Y now: {y.dtype}")
+            raise TypeError(f"y_train type must be int or float. Type y_train now: {y.dtype}")
 
         return X, y
+
+    cpdef _check_input_test(self, np.ndarray X):
+        """Checking dtype X_test"""
+        if X.dtype != np.float64 and X.dtype != np.float32 and X.dtype != np.int64 and X.dtype != np.int32:
+            raise TypeError(f"X_test type must be int or float. Type X_test now: {X.dtype}")
+        return X
 
 cdef class DecisionTreeRegressorSlow(TreeBuilder):
 
@@ -117,6 +123,9 @@ cdef class DecisionTreeRegressorSlow(TreeBuilder):
         
     cpdef _check_input(self, np.ndarray X, np.ndarray y):
         return super(TreeBuilder, self)._check_input(X, y)
+
+    cpdef _check_input_test(self, np.ndarray X_test):
+        return super(TreeBuilder, self)._check_input_test(X_test)
 
     cpdef _build(self, np.ndarray sub_X, np.ndarray sub_y, dict node, int depth):
         # check count samples for min_samples_split

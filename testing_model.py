@@ -8,4 +8,4 @@ y = data.target[:10]
 
 obj = TreeRegressorSlow()
 print(obj.fit(X, y))
-print(obj.tree)
+print(obj.predict(X))

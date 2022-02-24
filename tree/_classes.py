@@ -22,5 +22,5 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
         return self
 
     def predict(self, X_test):
-        ###!!!! add a X_test validate
+        X_test = super(DecisionTreeRegressorSlow, self)._check_input_test(X_test)
         return super(TreeRegressorSlow, self)._predict(X_test, self.tree)
