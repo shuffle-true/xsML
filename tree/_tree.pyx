@@ -1,6 +1,8 @@
 import numpy as np
 cimport numpy as np
 from sklearn.metrics import mean_squared_error as mse
+from itertools import combinations
+from libcpp cimport bool
 
 
 #------------------------------------------------------------------
@@ -358,3 +360,125 @@ cdef class DecisionTreeRegressorFast(TreeBuilder):
         for obj in range(X_test.shape[0]):
             predict.append(self._get_predict_node(X_test[obj], node))
         return predict
+
+
+
+#------------------------------------------------------------------
+#                      ADAPTIVE - TREE - CLASS
+#------------------------------------------------------------------
+
+cdef class DecisionTreeAdaptive(TreeBuilder):
+    def __init__(self, int max_depth,
+                 int min_samples_leaf,
+                 int min_samples_split,
+                 bint adaptive,
+                 int n_combinations,
+                 str randomization):
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.min_samples_split = min_samples_split
+        self.adaptive = adaptive
+        if self.adaptive:
+            self.adaptive_test = True
+        else:
+            self.adaptive_test = False
+        self.n_combinations = n_combinations
+        self.randomization = randomization
+
+    cpdef _data_transform(self, np.ndarray X, list index_tuples):
+        if self.randomization[0] == 'sum':
+            for i in index_tuples:
+                X = np.hstack((X, X[:, [*i]].sum(axis = 1).reshape(X.shape[0], 1)))
+            return X
+
+        if self.randomization[0] == 'prod':
+            for i in index_tuples:
+                X = np.hstack((X, X[:, [*i]].prod(axis = 1).reshape(X.shape[0], 1)))
+            return X
+
+
+        if self.randomization[0] == 'mean':
+            for i in index_tuples:
+                X = np.hstack((X, X[:, [*i]].mean(axis = 1).reshape(X.shape[0], 1)))
+            return X
+
+    cpdef _check_input(self, np.ndarray X, np.ndarray y):
+        return super(TreeBuilder, self)._check_input(X, y)
+
+    cpdef _check_input_test(self, np.ndarray X_test):
+        return super(TreeBuilder, self)._check_input_test(X_test)
+
+    cpdef _build(self, np.ndarray sub_X, np.ndarray sub_y, dict node, int depth):
+
+        if self.adaptive:
+            stuff = list(range(0, sub_X.shape[1], 1))
+            index_tuples = list(combinations(stuff, self.n_combinations[0]))
+            sub_X = self._data_transform(sub_X, index_tuples)
+            self.adaptive = False
+            self.adaptive_test = True
+
+        if len(sub_y) < self.min_samples_split:
+            return
+
+        # check depth
+        if depth == 0:
+            return
+
+        # find opt split, value, threshold_best
+        node['value'], node['threshold_best'], node['feature_split'], left_value, right_value = _fit_tree_fast(sub_X,
+                                                                                           sub_y,
+                                                                                           self.min_samples_leaf)
+
+        if node['feature_split'] is None:
+            return
+
+        node['left_child'], node['right_child'] = {}, {}
+
+        node['left_child']['value'] = left_value
+        node['left_child']['feature_split'] = None
+
+        node['right_child']['value'] = right_value
+        node['right_child']['feature_split'] = None
+
+
+        idx_l = sub_X[:, node['feature_split']] > node['threshold_best']
+        idx_r = sub_X[:, node['feature_split']] <= node['threshold_best']
+
+        self._build(sub_X[idx_l, :], sub_y[idx_l], node['left_child'], depth - 1)
+        self._build(sub_X[idx_r, :], sub_y[idx_r], node['right_child'], depth - 1)
+
+        return node
+
+    cpdef _get_predict_node(self, np.ndarray X_test, dict node):
+        # return target if split not found - const value
+        if node['feature_split'] is None:
+            return node['value']
+
+        # get down, if split found
+        if X_test[node['feature_split']] > node['threshold_best']:
+            return self._get_predict_node(X_test, node['left_child'])
+        else:
+            return self._get_predict_node(X_test, node['right_child'])
+
+    cpdef _predict(self, np.ndarray X_test, dict node):
+        """Get predict for X_test"""
+        predict = []
+
+        if self.adaptive_test:
+            stuff = list(range(0, X_test.shape[1], 1))
+            index_tuples = list(combinations(stuff, self.n_combinations[0]))
+            X_test = self._data_transform(X_test, index_tuples)
+            self.adaptive_test = False
+
+        for obj in range(X_test.shape[0]):
+            predict.append(self._get_predict_node(X_test[obj], node))
+        return predict
+
+
+
+
+
+
+
+
+

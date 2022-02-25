@@ -24,6 +24,24 @@ def _check_param(max_depth, min_samples_leaf, min_samples_split):
     if min_samples_split <= 0:
         raise ValueError(f"Parameter 'min_samples_split' must be greater than zero. Check 'min_samples_split'.")
 
+def _check_param_adaptive(adaptive, n_combinations, randomization):
+    if adaptive is not True and adaptive is not False:
+        raise TypeError(f"Argument 'adaptive' must be bool type: 'True' or 'False'. Please, check input parameters")
+
+    if not isinstance(n_combinations, int) and not np.issubdtype(n_combinations, np.integer):
+        raise TypeError(f"Type 'n_combinations' must be int. You send type {type(n_combinations).__name__}")
+
+    if not isinstance(randomization, str):
+        raise TypeError(f"Type 'randomization' must be str. You send type {type(randomization).__name__}")
+
+    if randomization != 'sum' and randomization != 'prod' and randomization != 'mean':
+        raise ValueError(f"Argument 'randomization' must be 'str', 'prod' or 'mean'. You send '{randomization}'")
+
+    if n_combinations <= 0:
+        raise ValueError(f"Parameter 'n_combinations' must be greater than zero. Check 'n_combinations'.")
+
+
+
 def get_numpy_array_train(X, y):
     """Get np.ndarray from X, y"""
 
