@@ -1,1 +1,2 @@
-__all__ = ["tree"]
+__all__ = ["tree",
+           "ensemble"]

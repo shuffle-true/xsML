@@ -11,6 +11,13 @@ from ._tree import DecisionTreeRegressorSlow, DecisionTreeRegressorFast, Decisio
 
 class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
     def __init__(self, max_depth=10, min_samples_leaf=1, min_samples_split=1):
+        """
+        TreeRegressorSlow calculate MSE for all object in always iteration in X_train and y_train
+
+        :param max_depth: int - depth Tree
+        :param min_samples_leaf: int - count minimal samples in leaf
+        :param min_samples_split: int - count minimal samples to do split
+        """
         # checking input parameters
         _check_param(max_depth, min_samples_leaf, min_samples_split)
 
@@ -20,6 +27,14 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
         self.tree = {}
 
     def fit(self, X_train, y_train):
+        """
+        Fitting Tree.
+
+        :param X_train: np.ndarray [dimension = 2], pd.DataFrame - train data
+        :param y_train: np.ndarray [dimension = 1], pd.Series - train target
+        :return: self
+        """
+
         # checking input data
 
         # get numpy array from different type
@@ -45,6 +60,12 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
         return self
 
     def predict(self, X_test):
+        """
+        Predict for X_test. Before use this method must used to .fit(X_train, y_train)
+
+        :param X_test: np.ndarray [dimension = 2], pd.DataFrame - train data
+        :return: predicted target for test/val data
+        """
         X_test = get_numpy_array_test(X_test)
 
         X_test = convert_type_test(X_test)
@@ -55,6 +76,13 @@ class TreeRegressorSlow(BaseEstimator, DecisionTreeRegressorSlow):
 
 class TreeRegressor(BaseEstimator, DecisionTreeRegressorFast):
     def __init__(self, max_depth = 10, min_samples_leaf = 1, min_samples_split = 1):
+        """
+        TreeRegressor calculate MSE for neighbours object in always iteration in X_train and y_train
+
+        :param max_depth: int - depth Tree
+        :param min_samples_leaf: int - count minimal samples in leaf
+        :param min_samples_split: int - count minimal samples to do split
+        """
         # checking input parameters
         _check_param(max_depth, min_samples_leaf, min_samples_split)
 
@@ -64,6 +92,13 @@ class TreeRegressor(BaseEstimator, DecisionTreeRegressorFast):
         self.tree = {}
 
     def fit(self, X_train, y_train):
+        """
+        Fitting Tree.
+
+        :param X_train: np.ndarray [dimension = 2], pd.DataFrame - train data
+        :param y_train: np.ndarray [dimension = 1], pd.Series - train target
+        :return: self
+        """
         # checking input data
 
         # get numpy array from different type
@@ -89,6 +124,12 @@ class TreeRegressor(BaseEstimator, DecisionTreeRegressorFast):
         return self
 
     def predict(self, X_test):
+        """
+        Predict for X_test. Before use this method must used to .fit(X_train, y_train)
+
+        :param X_test: np.ndarray [dimension = 2], pd.DataFrame - train data
+        :return: predicted target for test/val data
+        """
         X_test = get_numpy_array_test(X_test)
 
         X_test = convert_type_test(X_test)
@@ -98,6 +139,16 @@ class TreeRegressor(BaseEstimator, DecisionTreeRegressorFast):
         return super(TreeRegressor, self)._predict(X_test, self.tree)
 
 class TreeRegressorAdaptive(BaseEstimator, DecisionTreeAdaptive):
+    """
+    TreeRegressorAdaptive add to X_train different linear feature combination
+
+    :param max_depth: int - depth Tree
+    :param min_samples_leaf: int - count minimal samples in leaf
+    :param min_samples_split: int - count minimal samples to do split
+    :param adaptive: bool - if 'True' linear combination activate, else deactivate
+    :param n_combinations: int count combination feature index
+    :param randomization: str - aggregating feature
+    """
     def __init__(self, max_depth = 10,
                  min_samples_leaf = 1,
                  min_samples_split = 1,
@@ -122,6 +173,13 @@ class TreeRegressorAdaptive(BaseEstimator, DecisionTreeAdaptive):
         self.tree = {}
 
     def fit(self, X_train, y_train):
+        """
+        Fitting Tree.
+
+        :param X_train: np.ndarray [dimension = 2], pd.DataFrame - train data
+        :param y_train: np.ndarray [dimension = 1], pd.Series - train target
+        :return: self
+        """
         # checking input data
 
         # get numpy array from different type
@@ -152,6 +210,12 @@ class TreeRegressorAdaptive(BaseEstimator, DecisionTreeAdaptive):
         return self
 
     def predict(self, X_test):
+        """
+        Predict for X_test. Before use this method must used to .fit(X_train, y_train)
+
+        :param X_test: np.ndarray [dimension = 2], pd.DataFrame - train data
+        :return: predicted target for test/val data
+        """
         X_test = get_numpy_array_test(X_test)
 
         X_test = convert_type_test(X_test)
@@ -159,6 +223,3 @@ class TreeRegressorAdaptive(BaseEstimator, DecisionTreeAdaptive):
         X_test = super(DecisionTreeAdaptive, self)._check_input_test(X_test)
 
         return super(TreeRegressorAdaptive, self)._predict(X_test, self.tree)
-
-    def test(self, X, index_tuples):
-        return super(TreeRegressorAdaptive, self)._data_transform(X, index_tuples)
