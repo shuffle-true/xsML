@@ -1,1 +1,5 @@
-from ._base import BaggingRegressorModel
+from ._base import BaggingTree
+from ._base import BaggingTreeAdaptive
+
+__all__ = ["BaggingTree",
+           "BaggingTreeAdaptive"]
