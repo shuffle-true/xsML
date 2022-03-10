@@ -1,5 +1,5 @@
-from ._base import BaggingTree
-from ._base import BaggingTreeAdaptive
+from ._bagging import BaggingTree
+from ._bagging import BaggingTreeAdaptive
 
 __all__ = ["BaggingTree",
            "BaggingTreeAdaptive"]

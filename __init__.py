@@ -1,2 +1,3 @@
 __all__ = ["tree",
-           "ensemble"]
+           "ensemble",
+           "utils"]
