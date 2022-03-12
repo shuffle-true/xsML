@@ -241,6 +241,8 @@ cdef class DecisionTreeRegressorSlow(TreeBuilder):
 
     cpdef _build(self, np.ndarray sub_X, np.ndarray sub_y, dict node, int depth):
         # check count samples for min_samples_split
+        node['samples'] = len(sub_y)
+
         if len(sub_y) < self.min_samples_split:
             return
 
@@ -289,7 +291,7 @@ cdef class DecisionTreeRegressorSlow(TreeBuilder):
         predict = []
         for obj in range(X_test.shape[0]):
             predict.append(self._get_predict_node(X_test[obj], node))
-        return predict
+        return np.array(predict)
 
 
 #------------------------------------------------------------------
@@ -310,6 +312,8 @@ cdef class DecisionTreeRegressorFast(TreeBuilder):
         return super(TreeBuilder, self)._check_input_test(X_test)
 
     cpdef _build(self, np.ndarray sub_X, np.ndarray sub_y, dict node, int depth):
+        node['samples'] = len(sub_y)
+
         # check count samples for min_samples_split
         if len(sub_y) < self.min_samples_split:
             return
@@ -317,6 +321,7 @@ cdef class DecisionTreeRegressorFast(TreeBuilder):
         # check depth
         if depth == 0:
             return
+
 
         # find opt split, value, threshold_best
         node['value'], node['threshold_best'], node['feature_split'], left_value, right_value = _fit_tree_fast(sub_X,
@@ -359,7 +364,7 @@ cdef class DecisionTreeRegressorFast(TreeBuilder):
         predict = []
         for obj in range(X_test.shape[0]):
             predict.append(self._get_predict_node(X_test[obj], node))
-        return predict
+        return np.array(predict)
 
 
 
@@ -410,6 +415,9 @@ cdef class DecisionTreeAdaptive(TreeBuilder):
 
     cpdef _build(self, np.ndarray sub_X, np.ndarray sub_y, dict node, int depth):
 
+        node['samples'] = len(sub_y)
+
+
         if self.adaptive:
             stuff = list(range(0, sub_X.shape[1], 1))
             index_tuples = list(combinations(stuff, self.n_combinations[0]))
@@ -423,6 +431,7 @@ cdef class DecisionTreeAdaptive(TreeBuilder):
         # check depth
         if depth == 0:
             return
+
 
         # find opt split, value, threshold_best
         node['value'], node['threshold_best'], node['feature_split'], left_value, right_value = _fit_tree_fast(sub_X,
@@ -472,7 +481,7 @@ cdef class DecisionTreeAdaptive(TreeBuilder):
 
         for obj in range(X_test.shape[0]):
             predict.append(self._get_predict_node(X_test[obj], node))
-        return predict
+        return np.array(predict)
 
 
 

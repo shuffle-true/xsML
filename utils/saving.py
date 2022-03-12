@@ -4,6 +4,7 @@ from tree import TreeRegressorAdaptive
 from tree import TreeRegressorSlow
 from ensemble import BaggingTree
 from ensemble import BaggingTreeAdaptive
+from boosting import GBRegressor
 
 
 def save_model(model, filename: str):
@@ -13,7 +14,8 @@ def save_model(model, filename: str):
                               TreeRegressorSlow,
                               TreeRegressorAdaptive,
                               BaggingTree,
-                              BaggingTreeAdaptive)):
+                              BaggingTreeAdaptive,
+                              GBRegressor)):
 
         raise TypeError(f'You must send one of model class. You send {model.__class__.__name__}. Check input data')
 

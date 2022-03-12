@@ -97,11 +97,11 @@ class BaseBagging:
 
 class BaggingTree(BaseEstimator, BaseBagging):
     def __init__(self,
-                 base_model,
-                 n_estimators,
-                 max_depth,
-                 min_samples_leaf,
-                 min_samples_split):
+                 base_model = TreeRegressor,
+                 n_estimators = 10,
+                 max_depth = 5,
+                 min_samples_leaf = 1,
+                 min_samples_split = 1):
         _check_base_model_class(base_model)
         _check_param(n_estimators)
 
