@@ -32,7 +32,8 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
                  use_best_model: bool = False,
                  n_iter_early_stopping: int = None,
                  valid_control: float = 1e-10,
-                 plot: bool = True
+                 plot: bool = True,
+                 show_tqdm = False
                  ):
         """
         Gradient Boosting Regressor - GBRegressor.
@@ -79,7 +80,8 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
                          custom_loss,
                          use_best_model,
                          n_iter_early_stopping,
-                         valid_control)
+                         valid_control,
+                         show_tqdm)
 
         self.plot = plot
 

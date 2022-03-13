@@ -53,7 +53,8 @@ cdef class BaseBoosting:
                  str custom_loss,
                  bint use_best_model,
                  n_iter_early_stopping,
-                 float valid_control
+                 float valid_control,
+                 show_tqdm
                  ):
 
         self.base_model_class = base_model_class
@@ -93,6 +94,9 @@ cdef class BaseBoosting:
         if self.custom_loss == 'huber':
             self.loss_fn = self.loss.Huber
             self.loss_derivative = self.loss.Huber_der
+
+
+        self.show_tqdm = show_tqdm
 
 
     cdef _base_build(self, _, sub_X, sub_y, predictions):
@@ -164,7 +168,8 @@ cdef class GradientBoostingRegressor(BaseBoosting):
                  str custom_loss = 'mse',
                  bint use_best_model = False,
                  n_iter_early_stopping = None,
-                 valid_control = None):
+                 valid_control = None,
+                 show_tqdm = False):
 
         super().__init__(base_model_class,
                          base_model_params,
@@ -176,7 +181,8 @@ cdef class GradientBoostingRegressor(BaseBoosting):
                          custom_loss,
                          use_best_model,
                          n_iter_early_stopping,
-                         valid_control)
+                         valid_control,
+                         show_tqdm)
 
     cdef fit_without_valid(self, X_train, y_train):
         self.mean_y_train = y_train.mean()
@@ -190,15 +196,29 @@ cdef class GradientBoostingRegressor(BaseBoosting):
 
         X_train_, y_train_ = X_train, y_train
 
-        for _ in tqdm(range(self.n_estimators)):
 
-            if self.randomization:
-                X_train_, y_train_ = self.get_bootstrap(X_train, y_train)
+        if self.show_tqdm:
+            for _ in tqdm(range(self.n_estimators)):
 
-            predictions = self._base_build(_, X_train_, y_train_, predictions)
+                if self.randomization:
+                    X_train_, y_train_ = self.get_bootstrap(X_train, y_train)
 
-            if _ >= 1:
-                self._append_history_without_valid(y_train_, predictions)
+                predictions = self._base_build(_, X_train_, y_train_, predictions)
+
+                if _ >= 1:
+                    self._append_history_without_valid(y_train_, predictions)
+
+        else:
+
+            for _ in range(self.n_estimators):
+
+                if self.randomization:
+                    X_train_, y_train_ = self.get_bootstrap(X_train, y_train)
+
+                predictions = self._base_build(_, X_train_, y_train_, predictions)
+
+                if _ >= 1:
+                    self._append_history_without_valid(y_train_, predictions)
 
 
 
@@ -222,24 +242,47 @@ cdef class GradientBoostingRegressor(BaseBoosting):
 
         X_train_, y_train_ = X_train, y_train
 
-        for _ in tqdm(range(self.n_estimators)):
 
-            if self.randomization:
-                X_train_, y_train_ = self.get_bootstrap(X_train, y_train)
+        if self.show_tqdm:
+            for _ in tqdm(range(self.n_estimators)):
 
-            predictions = self._base_build(_, X_train_, y_train_, predictions)
+                if self.randomization:
+                    X_train_, y_train_ = self.get_bootstrap(X_train, y_train)
+
+                predictions = self._base_build(_, X_train_, y_train_, predictions)
 
 
-            if _ >= 1:
-                valid_predictions = self._predict_valid(_, X_valid, mean)
+                if _ >= 1:
+                    valid_predictions = self._predict_valid(_, X_valid, mean)
 
-                self._append_history_with_valid(y_train_, predictions, y_valid, valid_predictions)
+                    self._append_history_with_valid(y_train_, predictions, y_valid, valid_predictions)
 
-            if self.n_iter_early_stopping is not None and _ > self.n_iter_early_stopping:
+                if self.n_iter_early_stopping is not None and _ > self.n_iter_early_stopping:
 
-                if abs(self.history['valid'][-1] - self.history['valid'][-self.n_iter_early_stopping]) <= self.valid_control:
-                    self.n_estimators = _
-                    break
+                    if abs(self.history['valid'][-1] - self.history['valid'][-self.n_iter_early_stopping]) <= self.valid_control:
+                        self.n_estimators = _
+                        break
+
+        else:
+
+            for _ in range(self.n_estimators):
+
+                if self.randomization:
+                    X_train_, y_train_ = self.get_bootstrap(X_train, y_train)
+
+                predictions = self._base_build(_, X_train_, y_train_, predictions)
+
+
+                if _ >= 1:
+                    valid_predictions = self._predict_valid(_, X_valid, mean)
+
+                    self._append_history_with_valid(y_train_, predictions, y_valid, valid_predictions)
+
+                if self.n_iter_early_stopping is not None and _ > self.n_iter_early_stopping:
+
+                    if abs(self.history['valid'][-1] - self.history['valid'][-self.n_iter_early_stopping]) <= self.valid_control:
+                        self.n_estimators = _
+                        break
 
 
     cpdef _build(self, X_train, y_train, X_valid = None, y_valid = None):
@@ -251,7 +294,7 @@ cdef class GradientBoostingRegressor(BaseBoosting):
 
 
     cdef _predict_best_model(self, X_test):
-        arg_min = np.argmin(self.history['valid']) + 2
+        arg_min = np.argmin(self.history['valid']) + 1
 
         predictions = np.ones([X_test.shape[0]]) * self.mean_y_train
         # predictions = np.zeros(X_test.shape[0])
