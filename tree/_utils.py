@@ -48,23 +48,23 @@ def get_numpy_array_train(X, y):
     # check X
     if isinstance(X, np.ndarray):
         pass
-    if isinstance(X, pd.DataFrame):
+    elif isinstance(X, pd.DataFrame):
         X = X.to_numpy()
-    if isinstance(X, List):
+    elif isinstance(X, List):
         X = np.array(X)
 
     # check y
     if isinstance(y, np.ndarray):
         pass
-    if isinstance(y, pd.Series):
-        y = y.to_numpy()
-    if isinstance(y, List):
+    elif isinstance(y, (pd.Series, pd.DataFrame)):
+        y = y.to_numpy().ravel()
+    elif isinstance(y, List):
         y = np.array(y)
 
     if not isinstance(X, np.ndarray) and not isinstance(X, pd.DataFrame) and not isinstance(X, List):
         raise TypeError(f"Can't convert X, because X type is {type(X).__name__}. You must send Numpy, Pandas or List class object")
 
-    if not isinstance(y, np.ndarray) and not isinstance(y, pd.DataFrame) and not isinstance(y, List):
+    if not isinstance(y, np.ndarray) and not isinstance(y, (pd.Series, pd.DataFrame)) and not isinstance(y, List):
         raise TypeError(f"Can't convert Y, because Y type is {type(y).__name__}. You must send Numpy, Pandas Series or List class object")
 
     return X, y

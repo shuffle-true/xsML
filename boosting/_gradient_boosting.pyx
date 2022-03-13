@@ -140,7 +140,7 @@ cdef class GradientBoostingRegressor(BaseBoosting):
                          n_iter_early_stopping,
                          valid_control)
 
-    cdef fit_without_valid(self, np.ndarray X_train, np.ndarray y_train):
+    cdef fit_without_valid(self, X_train, y_train):
         self.mean_y_train = y_train.mean()
 
         if self.randomization:
@@ -166,10 +166,10 @@ cdef class GradientBoostingRegressor(BaseBoosting):
 
 
     cdef _fit_with_valid(self,
-                         np.ndarray X_train,
-                         np.ndarray y_train,
-                         np.ndarray X_valid,
-                         np.ndarray y_valid):
+                         X_train,
+                         y_train,
+                         X_valid,
+                         y_valid):
 
         self.mean_y_train = y_train.mean()
 
@@ -204,7 +204,7 @@ cdef class GradientBoostingRegressor(BaseBoosting):
                     break
 
 
-    cpdef _build(self, np.ndarray X_train, np.ndarray y_train, X_valid = None, y_valid = None):
+    cpdef _build(self, X_train, y_train, X_valid = None, y_valid = None):
         if X_valid is None and y_valid is None:
             self.fit_without_valid(X_train, y_train)
 
