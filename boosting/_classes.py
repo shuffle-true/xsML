@@ -1,5 +1,7 @@
-from tree import TreeRegressor
 from sklearn.base import BaseEstimator
+import matplotlib.pyplot as plt
+import seaborn as sns
+from tree import TreeRegressor
 from ._gradient_boosting import GradientBoostingRegressor
 
 from .utils import check_model
@@ -11,6 +13,8 @@ from .utils import get_numpy_array_train_valid
 
 from tree._utils import get_numpy_array_train
 from  tree._utils import get_numpy_array_test
+
+sns.set(style='whitegrid')
 
 
 
@@ -27,7 +31,8 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
                  custom_loss: str = 'mse',
                  use_best_model: bool = False,
                  n_iter_early_stopping: int = None,
-                 valid_control: float = 1e-10
+                 valid_control: float = 1e-10,
+                 plot: bool = True
                  ):
         """
         Gradient Boosting Regressor - GBRegressor.
@@ -46,6 +51,7 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
         :param use_best_model: bool - should use best n_estimator for best score on valid selection
         :param n_iter_early_stopping: int - count iterations for stop process if diff between score[n_iter] - score[-1] <= valid_control
         :param valid_control: float see n_iter_early_stopping
+        :param plot: bool - drawing graphs after fitting
         """
 
         # checking model and params for her
@@ -55,7 +61,7 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
         check_param(n_estimators, learning_rate, subsample, n_iter_early_stopping, valid_control)
 
         # check bool param
-        check_bool_param(randomization, use_best_model)
+        check_bool_param(randomization, use_best_model, plot)
 
         # check random seed for send to numpy
         check_random_state(random_seed)
@@ -74,6 +80,8 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
                          use_best_model,
                          n_iter_early_stopping,
                          valid_control)
+
+        self.plot = plot
 
 
 
@@ -99,9 +107,22 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
             raise TypeError(f"You must send X_train, y_train. "
                             f"X_valid, y_valid = optional.")
 
+        if X_valid is None and y_valid is None and self.use_best_model:
+            raise ValueError(f"You can't use argument 'use_best_model' while "
+                             f"don't pass deferred selection.")
+
         # start build boosting
         super()._build(X_train, y_train, X_valid, y_valid)
 
+        # draw if plot True
+
+        if self.plot:
+            fig, ax = plt.subplots()
+            sns.lineplot(data=self.history['train'], label='train', ax=ax)
+            sns.lineplot(data=self.history['valid'], label='valid', ax=ax)
+            ax.set_title('Зависимость ошибки от номера итерации')
+            ax.set_ylabel('Ошибка')
+            ax.set_xlabel('Номер итерации')
         return self
 
     def predict(self, X_test):

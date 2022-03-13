@@ -82,13 +82,16 @@ def check_param(n_estimators, learning_rate, subsample, n_iter_early_stopping, v
 
 
 
-def check_bool_param(randomization, use_best_model):
+def check_bool_param(randomization, use_best_model, plot):
 
     if randomization not in [True, False]:
         raise TypeError(f"Argument 'randomization' must be True or False. Check input")
 
     if use_best_model not in [True, False]:
         raise TypeError(f"Argument 'use_best_model' must be True or False. Check input")
+
+    if plot not in [True, False]:
+        raise TypeError(f"Argument 'plot' must be True or False. Check input")
 
 
 def check_random_state(random_state):
