@@ -3,12 +3,37 @@ cimport numpy as np
 from tree import TreeRegressor
 from tqdm import tqdm
 
+#------------------------------------------------------------------
+#                      LOSS - FUNCTION - CLASS
+#------------------------------------------------------------------
+
 cdef class LossFunction:
     def MSE(self, y, x):
-        return np.square(y - x).mean()
+        return 0.5 * np.square(y - x).mean()
     def MSE_der(self, y, x):
         return x - y
 
+    def LogMSE(self, y, x):
+        return 0.5 * np.square(np.log2(y) - np.log2(x)).mean()
+
+    def LogMSE_der(self, y, x):
+        return ( np.log2(x) - np.log2(y) ) / (np.log(2) * x)
+
+    def Log_cosh(self, y, x):
+        return np.log(np.cosh( x - y)).mean()
+
+    def Log_cosh_der(self, y, x):
+        return np.tanh( x - y )
+
+    def Huber(self, y, x):
+        mod = np.abs( y - x )
+        sigm = 1.35
+        return (0.5 * ((y - x) ** 2) * (mod < sigm) + sigm * (mod - 0.5 * sigm)  * (mod >= sigm) ).mean()
+
+    def Huber_der(self, y, x):
+        mod = np.abs( y - x )
+        sigm = 1.35
+        return ((x - y) * (mod < sigm) + ((sigm * (x - y)) / np.abs(y - x)) * (mod >= sigm))
 
 
 #------------------------------------------------------------------
@@ -56,6 +81,19 @@ cdef class BaseBoosting:
         if self.custom_loss == 'mse':
             self.loss_fn = self.loss.MSE
             self.loss_derivative = self.loss.MSE_der
+
+        if self.custom_loss == 'log_mse':
+            self.loss_fn = self.loss.LogMSE
+            self.loss_derivative = self.loss.LogMSE_der
+
+        if self.custom_loss == 'log_cosh':
+            self.loss_fn = self.loss.Log_cosh
+            self.loss_derivative = self.loss.Log_cosh_der
+
+        if self.custom_loss == 'huber':
+            self.loss_fn = self.loss.Huber
+            self.loss_derivative = self.loss.Huber_der
+
 
     cdef _base_build(self, _, sub_X, sub_y, predictions):
         """Building a tree base ensemble"""

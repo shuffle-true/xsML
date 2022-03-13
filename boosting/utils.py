@@ -105,9 +105,9 @@ def check_random_state(random_state):
 
 def check_loss(custom_loss):
 
-    if custom_loss not in ['mse']:
+    if custom_loss not in ['mse', 'log_mse', 'log_cosh', 'huber']:
 
-        raise ValueError(f"Argument 'custom_loss' must be str: 'mse', '', ... ##TODO. Check input data.")
+        raise ValueError(f"Argument 'custom_loss' must be str: 'mse', 'log_mse', 'log_cosh', 'huber'. Check input data.")
 
 def get_numpy_array_train_valid(X, y, Xv, yv):
     """Get np.ndarray from X, y"""
