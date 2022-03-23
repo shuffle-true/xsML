@@ -31,16 +31,16 @@ def check_model(base_model_class, base_model_params):
                         f"You must send dictionary. "
                         f"Check input data.")
 
-    if isinstance(base_model_params, dict):
-
-        for param in list(base_model_params.keys()):
-
-            if param not in list(base_model_class().get_params().keys()):
-
-                raise ValueError(f"Parameter '{param}' not defined in base model parameters. "
-                                 f"You must send this param: "
-                                 f"{list(base_model_class().get_params().keys())}. "
-                                 f"Check input data.")
+    # if isinstance(base_model_params, dict):
+    #
+    #     for param in list(base_model_params.keys()):
+    #
+    #         if param not in list(base_model_class().get_params().keys()):
+    #
+    #             raise ValueError(f"Parameter '{param}' not defined in base model parameters. "
+    #                              f"You must send this param: "
+    #                              f"{list(base_model_class().get_params().keys())}. "
+    #                              f"Check input data.")
 
 
 
@@ -161,3 +161,33 @@ def get_numpy_array_train_valid(X, y, Xv, yv):
             f"Can't convert Y_valid, because Y type is {type(yv).__name__}. You must send Numpy, Pandas Series or List class object")
 
     return X, y, Xv, yv
+
+
+def check_gain_param(max_depth, min_samples_leaf, min_samples_split, lmd, gmm, score):
+    if (not isinstance(max_depth, int)) and (not np.issubdtype(max_depth, np.integer)):
+        raise TypeError(f"Type 'max_depth' must be int. You send type {type(max_depth).__name__}")
+
+    if not isinstance(min_samples_leaf, int) and not np.issubdtype(min_samples_leaf, np.integer):
+        raise TypeError(f"Type 'min_samples_leaf' must be int. You send type {type(min_samples_leaf).__name__}")
+
+    if not isinstance(min_samples_split, int) and not np.issubdtype(min_samples_split, np.integer):
+        raise TypeError(f"Type 'min_samples_split' must be int. You send type {type(min_samples_split).__name__}")
+
+    if not isinstance(lmd, (float, int)) and not np.issubdtype(lmd, (np.integer, np.float32, np.float64)):
+        raise TypeError(f"Type 'lmd' must be int. You send type {type(lmd).__name__}")
+
+    if not isinstance(gmm, (float, int)) and not np.issubdtype(gmm, (np.integer, np.float32, np.float64)):
+        raise TypeError(f"Type 'gmm' must be int. You send type {type(gmm).__name__}")
+
+
+    if max_depth <= 0:
+        raise ValueError(f"Parameter 'max_depth' must be greater than zero. Check 'max_depth'.")
+
+    if min_samples_leaf <= 0:
+        raise ValueError(f"Parameter 'min_samples_leaf' must be greater than zero. Check 'min_samples_leaf'.")
+
+    if min_samples_split <= 0:
+        raise ValueError(f"Parameter 'min_samples_split' must be greater than zero. Check 'min_samples_split'.")
+
+    if score != 'mse' and score != 'log_mse' and score != 'log_cosh':
+        raise ValueError(f"Parameter 'score' must be one of this: 'mse', 'log_mse', 'log_cosh'. Check 'score'.")

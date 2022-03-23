@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from tree import TreeRegressor
 from ._gradient_boosting import GradientBoostingRegressor
+from ._gradient_boosting import XGBOOST
 
 from .utils import check_model
 from .utils import check_param
@@ -107,11 +108,11 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
 
         else:
             raise TypeError(f"You must send X_train, y_train. "
-                            f"X_valid, y_valid = optional.")
+                            f"X_valid and y_valid = optional.")
 
         if X_valid is None and y_valid is None and self.use_best_model:
             raise ValueError(f"You can't use argument 'use_best_model' while "
-                             f"don't pass deferred selection.")
+                             f"don't pass validation selection.")
 
         # start build boosting
         super()._build(X_train, y_train, X_valid, y_valid)
@@ -129,7 +130,7 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
 
     def predict(self, X_test):
         """
-        Predict for X_test. Before use this method must used to .fit(X_train, y_train)
+        Predict for X_test. Before use this method must be used to .fit(X_train, y_train)
 
         :param X_test: np.ndarray [dimension = 2], pd.DataFrame - test data
         :return: y_test - prediction
@@ -138,6 +139,47 @@ class GBRegressor(BaseEstimator, GradientBoostingRegressor):
         X_test = get_numpy_array_test(X_test)
 
         return super()._predict(X_test)
+
+
+
+
+class xgBoost(BaseEstimator, XGBOOST):
+    def __init__(self,
+                 max_depth = 3,
+                 min_samples_leaf = 2,
+                 min_samples_split = 1,
+                 lmd = 1.0,
+                 gmm = 0.1,
+                 n_estimators = 100,
+                 learning_rate = 0.1,
+                 randomization = False,
+                 subsample = 0.3,
+                 random_seed = None,
+                 use_best_valid_model=False,
+                 custom_loss = 'mse',
+                 n_iter_early_stopping = None,
+                 valid_control = 1e-7,
+                 show_tqdm = True
+                 ):
+
+        super().__init__(
+            n_estimators,
+            max_depth,
+            min_samples_leaf,
+            min_samples_split,
+            lmd,
+            gmm,
+            learning_rate,
+            randomization,
+            subsample,
+            random_seed,
+            use_best_valid_model,
+            custom_loss,
+            n_iter_early_stopping,
+            valid_control,
+            show_tqdm
+        )
+
 
 
 

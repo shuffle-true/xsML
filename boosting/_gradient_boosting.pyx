@@ -3,6 +3,17 @@ cimport numpy as np
 from tree import TreeRegressor
 from tqdm import tqdm
 
+from numpy import float32 as DTYPE
+from numpy import float64 as DOUBLE
+from numpy import int32 as DTYPE_INT
+from numpy import int64 as DOUBLE_INT
+
+from .utils import check_gain_param
+from tree._utils import get_numpy_array_train
+from tree._utils import get_numpy_array_test
+from tree._utils import convert_type_train
+from tree._utils import convert_type_test
+
 #------------------------------------------------------------------
 #                      LOSS - FUNCTION - CLASS
 #------------------------------------------------------------------
@@ -318,6 +329,261 @@ cdef class GradientBoostingRegressor(BaseBoosting):
                 predictions += self.learning_rate * self.models[_].predict(X_test)
 
             return predictions
+
+
+
+
+#------------------------------------------------------------------
+#                      BASE - GAIN - TREE - CLASS
+#------------------------------------------------------------------
+
+cdef class RTG:
+    def __init__(self,
+                 size_t max_depth,
+                 size_t min_samples_leaf,
+                 size_t min_samples_split,
+                 double lmd,
+                 double gmm,
+                 str score):
+
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.min_samples_split = min_samples_split
+        self.lmd = lmd
+        self.gmm = gmm
+        self.score = score
+
+
+    cpdef list _check_input(self, np.ndarray X, np.ndarray y):
+        """Checking dtype X, y"""
+        if X.dtype != DOUBLE and X.dtype != DTYPE and X.dtype != DOUBLE_INT and X.dtype != DTYPE_INT:
+            raise TypeError(f"X_train type must be int or float. Type X_train now: {X.dtype}")
+
+        elif y.dtype != DOUBLE and y.dtype != DTYPE and y.dtype != DOUBLE_INT and y.dtype != DTYPE_INT:
+            raise TypeError(f"y_train type must be int or float. Type y_train now: {y.dtype}")
+
+        return X, y
+
+    cpdef np.ndarray _check_input_test(self, np.ndarray X):
+        """Checking dtype X_test"""
+        if X.dtype != DOUBLE and X.dtype != DTYPE and X.dtype != DOUBLE_INT and X.dtype != DTYPE_INT:
+            raise TypeError(f"X_test type must be int or float. Type X_test now: {X.dtype}")
+        return X
+
+
+
+    cdef list _fit_tree_mse(self,
+                 np.ndarray sub_X,
+                 np.ndarray sub_y):
+
+        cdef float value = np.mean(sub_y)
+        cdef float best_error = ((sub_y - value) ** 2).sum()
+        cdef float error = best_error
+        cdef size_t cnt_features = sub_X.shape[1]
+
+        cdef np.ndarray[np.int64_t, ndim = 1] arg
+        cdef float N = sub_X.shape[0]
+        cdef float Nl = sub_X.shape[0]
+        cdef float Nr = 0
+        cdef size_t ind
+        cdef size_t thres = 1
+        cdef double gain
+        cdef double gl
+        cdef double gr
+
+        cdef double best_gain = -self.gmm
+
+        threshold_best, feature_split, left_value, right_value = None, None, None, None
+
+
+        for feature in range(cnt_features):
+            feature_vector = sub_X[:, feature]
+
+            gl = sub_y.sum()
+            gr = 0.0
+
+            arg = np.argsort(feature_vector)
+
+            while thres < N - 1:
+                Nl -= 1
+                Nr += 1
+
+                ind = arg[thres]
+                threshold = feature_vector[ind]
+
+                gl -= sub_y[ind]
+                gr += sub_y[ind]
+
+                gain = (gl**2) / (Nl + self.lmd)  + (gr**2) / (Nr + self.lmd)
+                gain -= ((gl + gr)**2) / (Nl + Nr + self.lmd) + self.gmm
+
+                if (gain > best_gain) and (min(Nl, Nr) > self.min_samples_leaf):
+                    best_gain = gain
+                    left_value = -gl / (Nl + self.lmd)
+                    right_value = -gr / (Nr + self.lmd)
+                    threshold_best = threshold
+                    feature_split = feature
+
+                thres += 1
+
+        return [value, threshold_best, feature_split, left_value, right_value]
+
+
+    cpdef _build(self,
+                 np.ndarray sub_X,
+                 np.ndarray sub_y,
+                 dict NODE,
+                 size_t depth):
+
+        cdef size_t y_size = sub_y.size
+
+        NODE['samples'] = y_size
+
+        if y_size < self.min_samples_split:
+            return
+
+        if depth == 0:
+            return
+
+        if self.score == 'mse':
+            NODE['value'], NODE['threshold_best'], NODE['feature_split'], left_value, right_value = self._fit_tree_mse(sub_X,
+                                                                                                                sub_y)
+        elif self.score == 'logmse':
+            pass
+
+        if NODE['feature_split'] is None:
+            return
+
+        NODE['left_child'], NODE['right_child'] = {}, {}
+
+        NODE['left_child']['value'] = left_value
+        NODE['left_child']['feature_split'] = None
+
+        NODE['right_child']['value'] = right_value
+        NODE['right_child']['feature_split'] = None
+
+
+        idx_l = sub_X[:, NODE['feature_split']] > NODE['threshold_best']
+        idx_r = sub_X[:, NODE['feature_split']] <= NODE['threshold_best']
+
+        self._build(sub_X[idx_l, :], sub_y[idx_l], NODE['left_child'], depth - 1)
+        self._build(sub_X[idx_r, :], sub_y[idx_r], NODE['right_child'], depth - 1)
+
+        return NODE
+
+    cdef _get_predict_node(self, np.ndarray X_test, dict NODE):
+        # return target if split not found - const value
+        if NODE['feature_split'] is None:
+            return NODE['value']
+
+        # get down, if split found
+        if X_test[NODE['feature_split']] > NODE['threshold_best']:
+            return self._get_predict_node(X_test, NODE['left_child'])
+        else:
+            return self._get_predict_node(X_test, NODE['right_child'])
+
+    cpdef _predict(self, np.ndarray X_test, dict NODE):
+        """Get predict for X_test"""
+        predict = []
+        for obj in range(X_test.shape[0]):
+            predict.append(self._get_predict_node(X_test[obj], NODE))
+        return np.array(predict)
+
+#------------------------------------------------------------------
+#                      GAIN - TREE - CLASS
+#------------------------------------------------------------------
+
+
+cdef class TreeRegressorGain(RTG):
+    def __init__(self,
+                 size_t max_depth,
+                 size_t min_samples_leaf,
+                 size_t min_samples_split,
+                 double lmd,
+                 double gmm,
+                 str score):
+        check_gain_param(max_depth,min_samples_leaf, min_samples_split, lmd, gmm, score)
+
+        super().__init__(max_depth,
+                         min_samples_leaf,
+                         min_samples_split,
+                         lmd,
+                         gmm,
+                         score)
+
+        self.tree = {}
+
+    cdef fit(self, np.ndarray X_train, np.ndarray y_train):
+        X_train, y_train = get_numpy_array_train(X_train, y_train)
+        X_train, y_train = convert_type_train(X_train, y_train)
+
+        # if len(y_train.shape) != 1:
+        #     raise IndexError(f"Argument length 'X_train' != 'y_train': {X_train.shape[0]} != {len(y_train)}. "
+        #                      f"Please, check input data.")
+        #
+        # if X_train.shape[0] != len(y_train):
+        #     raise IndexError(f"Argument length 'X_train' != 'y_train': {X_train.shape[0]} != {len(y_train)}. "
+        #                      f"Please, check input data.")
+
+        X_train, y_train = self._check_input(X_train, y_train)
+        self.tree = self._build(X_train, y_train, self.tree, self.max_depth)
+
+    cdef predict(self, np.ndarray X_test):
+        X_test = get_numpy_array_test(X_test)
+        X_test = convert_type_test(X_test)
+        X_test = self._check_input_test(X_test)
+
+        return self._predict(X_test, self.tree)
+
+
+
+
+
+
+#------------------------------------------------------------------
+#                      XGBOOST - CLASS
+#------------------------------------------------------------------
+
+cdef class XGBOOST(BaseBoosting):
+    def __init__(self,
+                 size_t n_estimators,
+                 size_t max_depth,
+                 size_t min_samples_leaf,
+                 size_t min_samples_split,
+                 double lmd,
+                 double gmm,
+                 float learning_rate,
+                 bint randomization,
+                 float subsample,
+                 random_seed,
+                 bint use_best_valid_model,
+                 str custom_loss,
+                 n_iter_early_stopping,
+                 float valid_control,
+                 show_tqdm):
+
+        base_model_class = TreeRegressorGain
+        base_model_params = {
+            'max_depth': max_depth,
+            'min_samples_leaf': min_samples_leaf,
+            'min_samples_split': min_samples_split,
+            'lmd': lmd,
+            'gmm': gmm
+            }
+
+        super().__init__(
+            base_model_class,
+            base_model_params,
+            n_estimators,
+            learning_rate,
+            randomization,
+            subsample,
+            random_seed,
+            custom_loss,
+            use_best_valid_model,
+            n_iter_early_stopping,
+            valid_control,
+            show_tqdm)
 
 
 
