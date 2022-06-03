@@ -26,7 +26,7 @@ __Базовое виртуальное окружение _Anaconda_ поста
 __Но все же Вам необходимо поставить пару зависимостей.__
 
 - В терминале выполните команду `pip install Cython` - это установит в систему библиотеку __Cython__, на которой написаны почти все алгоритмы.
-- Если в системе не установлен С-компилятор, Вы должны выполнить команду `sudo apt-get install build-essential`, но даже если он установлен, то ничего страшного.
+- Если в системе не установлен С-компилятор, Вы должны выполнить команду `sudo apt-get install build-essential`, но даже если он установлен и Вы этого не знаете, то выполнение команды ни на что не повлияет.
 
 __Шаг 1. - компиляция моделей__
 
@@ -71,6 +71,21 @@ model.fit(X_train, y_train)
 print(
 	f"Ошибка на тренировочной выборке {mse(y_train, model.predict(X_train))}",
 	f"Ошибка на тестовой выборке {mse(y_test, model.predict(X_test))}",
+	sep = '\n'
+)
+
+# 0.3844392954421342
+# 0.4489219559352642
+
+# сохраним это модель, прочитаем и сделаем предсказание.
+from utils import save_model, open_model
+
+save_model(model, "model_1")
+model_after_saving = open_model("model_1")
+
+print(
+	f"Ошибка на тренировочной выборке {mse(y_train, model_after_saving.predict(X_train))}",
+	f"Ошибка на тестовой выборке {mse(y_test, model_after_saving.predict(X_test))}",
 	sep = '\n'
 )
 
