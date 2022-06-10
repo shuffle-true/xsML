@@ -1,37 +1,92 @@
-## Welcome to GitHub Pages
+Небольшая Python-библиотека, в которой реализованы некоторые алгоритмы машинного обучения для __регрессии__. Ее архитекутра очень схожа с __[SkLearn](https://github.com/scikit-learn/scikit-learn)__, но эффективность несколько хуже. Интерфейс взаимодействия с этой библиотекой также прост, как и с _SkLearn_. Помимо этого, Вы сможете без труда разобраться в коде библиотеки, например, для более глубокого понимания происходящих внутри процессов. 
 
-You can use the [editor on GitHub](https://github.com/shuffle-true/xsML/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+__В отличие от SkLearn, в xsML Вы можете посмотреть на то, как отработал алгоритм расщепления и построения дерева. Для этого достаточно вызвать метод `.tree` у объекта класса `TreeRegressor` или `TreeRegressorSlow`. В результате Вы получите словарь, в котором показана структура дерева.__
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+# Реализованные алгоритмы
 
-### Markdown
+- [x] Дерево решений (наивное решение через подсчет ошибки за __O(N)__, а также решение через переброс суммы __O(1)__ - скорость обучения сравнима со скоростью SkLearn)
+- [x] Бэггинг - есть возможность использовать как наивную, так и продвинутую реализацию дерева решений.
+- [x] Градиентный бустинг - поддерживает обширный спектр параметров, как интерфейсных, так и математических. 
+- [x] Bias Varience Decomposition - разложение ошибки на смещение и разброс, очень полезная вещь при анализе алгоритмов в той или иной задаче.
+- [x] Поддержка __Pandas, NumPy и List__ - типов данных, на которых можно обучать модели.
+ 
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+# Установка библиотеки.
 
-```markdown
-Syntax highlighted code block
+__Инструкция написана для Linux подобных систем. С виртуальным окружением от [Anaconda](https://www.anaconda.com/products/distribution)__
 
-# Header 1
-## Header 2
-### Header 3
+__Шаг 0. - проверка наличия и установка зависимостей__
 
-- Bulleted
-- List
+- Удостовертесь, что Ваша система это Linux подобная и в ней установлен пакет _Anaconda._
 
-1. Numbered
-2. List
+__Базовое виртуальное окружение _Anaconda_ поставляет все необходимые зависимости, хоть их там и не так много - Pandas, NumPy__
 
-**Bold** and _Italic_ and `Code` text
+__Но все же Вам необходимо поставить пару зависимостей.__
 
-[Link](url) and ![Image](src)
+- В терминале выполните команду `pip install Cython` - это установит в систему библиотеку __Cython__, на которой написаны почти все алгоритмы.
+- Если в системе не установлен С-компилятор, Вы должны выполнить команду `sudo apt-get install build-essential`, но даже если он установлен и Вы этого не знаете, то выполнение команды ни на что не повлияет.
+
+__Шаг 1. - компиляция моделей__
+
+Так как довольно значительный участок кода написан на Cython, то при установке необходимо скомпилировать этот код для дальнейшего использования.
+
+- Перейдите в директорию __./tree__, выполните команду `python setup.py build_ext --inplace`
+- Перейдите в директорию __./boosting__, выполните команду `python setup.py build_ext --inplace`
+
+Модели скомпилированны и готовы к работе.
+
+__Установка библиотеки завершена.__
+
+# Минимальный пример использования.
+
+Возьмем дата-сет из библиотеки SkLearn. Он содержит порядка 20 тыс.записей о жилых домах в Бостоне. Наша задача - по некоторым признакам, доступным нам, научиться предсказывать цену на этот дом. Довольно классическая задача регрессии.
+
+Ниже представлен запуск обучения и предсказания.
+
+```python
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error as mse
+
+# находимся в директории проекта и можем так импортнуть
+from tree import TreeRegressor
+
+# загружаем данные
+data = fetch_california_housing()
+X = data.data
+y = data.target
+
+# формируем выборку
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3)
+
+# определяем объект класса TreeRegressor - наша модель
+model = TreeRegressor(max_depth = 7, min_samples_leaf = 6, min_samples_split = 2)
+
+# строим дерево - обучаем модель
+model.fit(X_train, y_train)
+
+# смотрим на получившуюся ошибку на тренировочной и тестовой выборках
+print(
+	f"Ошибка на тренировочной выборке {mse(y_train, model.predict(X_train))}",
+	f"Ошибка на тестовой выборке {mse(y_test, model.predict(X_test))}",
+	sep = '\n'
+)
+
+# 0.3844392954421342
+# 0.4489219559352642
+
+# сохраним это модель, прочитаем и сделаем предсказание.
+from utils import save_model, open_model
+
+save_model(model, "model_1")
+model_after_saving = open_model("model_1")
+
+print(
+	f"Ошибка на тренировочной выборке {mse(y_train, model_after_saving.predict(X_train))}",
+	f"Ошибка на тестовой выборке {mse(y_test, model_after_saving.predict(X_test))}",
+	sep = '\n'
+)
+
+# 0.3844392954421342
+# 0.4489219559352642
 ```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/shuffle-true/xsML/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
